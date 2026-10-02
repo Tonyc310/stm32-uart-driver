@@ -12,3 +12,7 @@ add_test(NAME ring_buffer COMMAND test_ring_buffer)
 add_executable(test_shell test_shell.c)
 target_link_libraries(test_shell PRIVATE portable unity project_warnings)
 add_test(NAME shell COMMAND test_shell)
+
+add_executable(test_framing test_framing.c)
+target_link_libraries(test_framing PRIVATE portable unity project_warnings)
+add_test(NAME framing COMMAND test_framing)
