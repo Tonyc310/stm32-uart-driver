@@ -9,6 +9,12 @@ typedef enum {
     UART_COUNT,
 } uart_id_t;
 
+typedef struct {
+    uint32_t rx_bytes;
+    uint32_t tx_bytes;
+    uint32_t rx_dropped; /* lost to a full RX buffer or a hardware overrun */
+} uart_stats_t;
+
 /** Starts the port at `baud`, 8N1, with interrupt-driven RX and TX. Call after board_init(). */
 void uart_init(uart_id_t id, uint32_t baud);
 
@@ -18,7 +24,7 @@ size_t uart_write(uart_id_t id, const uint8_t *data, size_t len);
 /** Copies up to `len` received bytes into `data` and returns how many. Never blocks. */
 size_t uart_read(uart_id_t id, uint8_t *data, size_t len);
 
-/** Received bytes lost to a full RX buffer or a hardware overrun since uart_init(). */
-uint32_t uart_rx_dropped(uart_id_t id);
+/** Byte counters since uart_init(). A snapshot: the ISR may update them right after. */
+uart_stats_t uart_stats(uart_id_t id);
 
 #endif

@@ -20,13 +20,15 @@ help          list commands
 led on|off    switch the green LED
 uptime        milliseconds since reset
 echo <text>   print text back
-stats         received bytes lost to overruns
+stats         console byte counters
 > led on
 > uptime
-3609 ms
+3511 ms
 > echo hello from the STM32
 hello from the STM32
 > stats
+rx bytes:   51
+tx bytes:   302
 rx dropped: 0
 > blink
 unknown command: blink (try help)

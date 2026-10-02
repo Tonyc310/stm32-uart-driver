@@ -18,7 +18,10 @@ typedef struct {
     ring_buffer_t tx;
     uint8_t rx_storage[RX_BUFFER_SIZE];
     uint8_t tx_storage[TX_BUFFER_SIZE];
-    _Atomic uint32_t rx_dropped; /* written only by the ISR */
+    /* Counters are written only by the ISR. */
+    _Atomic uint32_t rx_bytes;
+    _Atomic uint32_t tx_bytes;
+    _Atomic uint32_t rx_dropped;
 } uart_t;
 
 /* To add a port: an entry here, its IRQ handler below, and its clocks and pins in board.c. */
@@ -41,6 +44,8 @@ void uart_init(uart_id_t id, uint32_t baud)
     /* Can't fail: the static asserts above guarantee power-of-two sizes. */
     (void)rb_init(&port->rx, port->rx_storage, sizeof port->rx_storage);
     (void)rb_init(&port->tx, port->tx_storage, sizeof port->tx_storage);
+    atomic_init(&port->rx_bytes, 0u);
+    atomic_init(&port->tx_bytes, 0u);
     atomic_init(&port->rx_dropped, 0u);
 
     regs->CR1 = 0u;
@@ -77,9 +82,15 @@ size_t uart_read(uart_id_t id, uint8_t *data, size_t len)
     return count;
 }
 
-uint32_t uart_rx_dropped(uart_id_t id)
+uart_stats_t uart_stats(uart_id_t id)
 {
-    return atomic_load_explicit(&ports[id].rx_dropped, memory_order_relaxed);
+    uart_t *port = &ports[id];
+
+    return (uart_stats_t){
+        .rx_bytes = atomic_load_explicit(&port->rx_bytes, memory_order_relaxed),
+        .tx_bytes = atomic_load_explicit(&port->tx_bytes, memory_order_relaxed),
+        .rx_dropped = atomic_load_explicit(&port->rx_dropped, memory_order_relaxed),
+    };
 }
 
 static void handle_irq(uart_t *port)
@@ -92,6 +103,8 @@ static void handle_irq(uart_t *port)
         uint8_t byte = (uint8_t)regs->DR;
         /* ORE means the hardware dropped a byte that arrived before DR was read. */
         uint32_t lost = (status & USART_SR_ORE) ? 1u : 0u;
+
+        atomic_fetch_add_explicit(&port->rx_bytes, 1u, memory_order_relaxed);
 
         if (!rb_push(&port->rx, byte)) {
             lost++;
@@ -107,6 +120,7 @@ static void handle_irq(uart_t *port)
 
         if (rb_pop(&port->tx, &byte)) {
             regs->DR = byte;
+            atomic_fetch_add_explicit(&port->tx_bytes, 1u, memory_order_relaxed);
         } else {
             /* Nothing left to send: silence TXE until uart_write() queues more. */
             regs->CR1 &= ~USART_CR1_TXEIE;

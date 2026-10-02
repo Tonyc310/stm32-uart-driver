@@ -76,12 +76,21 @@ static void cmd_echo(const char *args)
     print("\r\n");
 }
 
+static void print_counter(const char *label, uint32_t value)
+{
+    print(label);
+    print_u32(value);
+    print("\r\n");
+}
+
 static void cmd_stats(const char *args)
 {
+    uart_stats_t stats = uart_stats(UART_CONSOLE);
+
     (void)args;
-    print("rx dropped: ");
-    print_u32(uart_rx_dropped(UART_CONSOLE));
-    print("\r\n");
+    print_counter("rx bytes:   ", stats.rx_bytes);
+    print_counter("tx bytes:   ", stats.tx_bytes);
+    print_counter("rx dropped: ", stats.rx_dropped);
 }
 
 static const command_t commands[] = {
@@ -89,7 +98,7 @@ static const command_t commands[] = {
     {"led", "led on|off    switch the green LED", cmd_led},
     {"uptime", "uptime        milliseconds since reset", cmd_uptime},
     {"echo", "echo <text>   print text back", cmd_echo},
-    {"stats", "stats         received bytes lost to overruns", cmd_stats},
+    {"stats", "stats         console byte counters", cmd_stats},
 };
 
 static void cmd_help(const char *args)
