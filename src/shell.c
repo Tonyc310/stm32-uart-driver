@@ -20,6 +20,7 @@ static char line[MAX_LINE + 1u];
 static size_t line_len;
 static bool last_was_cr;
 
+/* Waits for TX room rather than dropping output; shell replies are short. */
 static void write_all(const char *text, size_t len)
 {
     while (len > 0u) {
@@ -34,9 +35,10 @@ static void print(const char *text)
     write_all(text, strlen(text));
 }
 
+/* printf isn't linked into this firmware, so numbers are formatted by hand. */
 static void print_u32(uint32_t value)
 {
-    char digits[10];
+    char digits[10]; /* UINT32_MAX has 10 digits */
     size_t count = 0;
 
     do {
@@ -47,6 +49,7 @@ static void print_u32(uint32_t value)
     write_all(&digits[sizeof digits - count], count);
 }
 
+/* Declared ahead of the table because help prints the table. */
 static void cmd_help(const char *args);
 
 static void cmd_led(const char *args)
@@ -89,6 +92,7 @@ static void cmd_help(const char *args)
     }
 }
 
+/* Splits the line into a command name and its arguments, ignoring extra spaces. */
 static void run_line(void)
 {
     while (line_len > 0u && line[line_len - 1u] == ' ') {
@@ -106,7 +110,7 @@ static void run_line(void)
 
     char *args = strchr(name, ' ');
     if (args == NULL) {
-        args = &line[line_len];
+        args = &line[line_len]; /* no arguments: the terminator, an empty string */
     } else {
         *args++ = '\0';
         while (*args == ' ') {
@@ -138,8 +142,7 @@ void shell_input(uint8_t byte)
     last_was_cr = (byte == '\r');
 
     if (byte == '\r' || byte == '\n') {
-        /* Terminals end lines with CR, LF, or CR LF; the LF of a CR LF pair is not a second line.
-         */
+        /* Terminals send CR, LF, or CR LF; the LF of a pair doesn't end a second line. */
         if (byte == '\n' && after_cr) {
             return;
         }
@@ -148,7 +151,7 @@ void shell_input(uint8_t byte)
         line_len = 0u;
         print(PROMPT);
     } else if (byte == '\b' || byte == 0x7Fu) {
-        /* Backspace arrives as BS or DEL depending on the terminal. */
+        /* Backspace arrives as BS or DEL; "\b \b" erases the character on screen. */
         if (line_len > 0u) {
             line_len--;
             print("\b \b");

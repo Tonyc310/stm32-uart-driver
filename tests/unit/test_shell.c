@@ -10,6 +10,7 @@ static size_t output_len;
 static bool led_on;
 static uint32_t uptime_ms;
 
+/* Link-time fakes for the UART and board drivers, so the shell runs on the host. */
 size_t uart_write(uart_id_t id, const uint8_t *data, size_t len)
 {
     TEST_ASSERT_EQUAL(UART_CONSOLE, id);

@@ -12,6 +12,7 @@ static uint32_t capacity(const ring_buffer_t *rb)
 
 bool rb_init(ring_buffer_t *rb, uint8_t *storage, uint32_t size)
 {
+    /* A power of two has exactly one bit set, so clearing its lowest set bit leaves zero. */
     if (size == 0u || (size & (size - 1u)) != 0u) {
         return false;
     }

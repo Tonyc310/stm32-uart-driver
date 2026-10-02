@@ -7,7 +7,7 @@
 #define AF_USART2 7u
 #define TICK_HZ 1000u
 
-static _Atomic uint32_t uptime_ms;
+static _Atomic uint32_t uptime_ms; /* written only by SysTick_Handler */
 
 void board_init(void)
 {
@@ -16,6 +16,7 @@ void board_init(void)
     /* Read back so the clocks are running before their registers are touched (STM32F4 errata). */
     (void)RCC->APB1ENR;
 
+    /* PA2 (TX) and PA3 (RX) in alternate-function mode, AF7 = USART2. */
     GPIOA->MODER = (GPIOA->MODER & ~(GPIO_MODER_MODE2 | GPIO_MODER_MODE3)) | GPIO_MODER_MODE2_1 |
                    GPIO_MODER_MODE3_1;
     GPIOA->AFR[0] = (GPIOA->AFR[0] & ~(GPIO_AFRL_AFSEL2 | GPIO_AFRL_AFSEL3)) |
@@ -23,13 +24,16 @@ void board_init(void)
     /* Pull RX up so a disconnected line idles high instead of reading noise. */
     GPIOA->PUPDR = (GPIOA->PUPDR & ~GPIO_PUPDR_PUPD3) | GPIO_PUPDR_PUPD3_0;
 
+    /* PD12 (green LED) as a general-purpose output. */
     GPIOD->MODER = (GPIOD->MODER & ~GPIO_MODER_MODE12) | GPIO_MODER_MODE12_0;
 
+    /* SystemInit leaves the chip on its 16 MHz internal clock, so this is a 1 ms tick. */
     SysTick_Config(SystemCoreClock / TICK_HZ);
 }
 
 void board_led_set(bool on)
 {
+    /* BSRR changes only PD12 in a single write, so it can't clobber other GPIOD pins. */
     GPIOD->BSRR = on ? GPIO_BSRR_BS12 : GPIO_BSRR_BR12;
 }
 

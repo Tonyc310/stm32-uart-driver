@@ -18,9 +18,10 @@ typedef struct {
     ring_buffer_t tx;
     uint8_t rx_storage[RX_BUFFER_SIZE];
     uint8_t tx_storage[TX_BUFFER_SIZE];
-    _Atomic uint32_t rx_dropped;
+    _Atomic uint32_t rx_dropped; /* written only by the ISR */
 } uart_t;
 
+/* To add a port: an entry here, its IRQ handler below, and its clocks and pins in board.c. */
 static uart_t ports[UART_COUNT] = {
     [UART_CONSOLE] = {.regs = USART2, .irq = USART2_IRQn},
 };
@@ -37,11 +38,13 @@ void uart_init(uart_id_t id, uint32_t baud)
     uart_t *port = &ports[id];
     USART_TypeDef *regs = port->regs;
 
+    /* Can't fail: the static asserts above guarantee power-of-two sizes. */
     (void)rb_init(&port->rx, port->rx_storage, sizeof port->rx_storage);
     (void)rb_init(&port->tx, port->tx_storage, sizeof port->tx_storage);
     atomic_init(&port->rx_dropped, 0u);
 
     regs->CR1 = 0u;
+    /* With 16x oversampling, BRR is the bus clock divided by the baud rate, rounded. */
     regs->BRR = (apb1_clock_hz() + baud / 2u) / baud;
     regs->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
 
@@ -87,6 +90,7 @@ static void handle_irq(uart_t *port)
     if (status & (USART_SR_RXNE | USART_SR_ORE)) {
         /* Reading DR after SR clears both RXNE and ORE. */
         uint8_t byte = (uint8_t)regs->DR;
+        /* ORE means the hardware dropped a byte that arrived before DR was read. */
         uint32_t lost = (status & USART_SR_ORE) ? 1u : 0u;
 
         if (!rb_push(&port->rx, byte)) {
@@ -97,12 +101,14 @@ static void handle_irq(uart_t *port)
         }
     }
 
+    /* TXE stays set while the transmitter is idle, so act on it only while TXEIE is on. */
     if ((status & USART_SR_TXE) && (regs->CR1 & USART_CR1_TXEIE)) {
         uint8_t byte;
 
         if (rb_pop(&port->tx, &byte)) {
             regs->DR = byte;
         } else {
+            /* Nothing left to send: silence TXE until uart_write() queues more. */
             regs->CR1 &= ~USART_CR1_TXEIE;
         }
     }

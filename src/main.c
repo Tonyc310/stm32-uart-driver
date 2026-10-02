@@ -8,6 +8,7 @@ int main(void)
     uart_init(UART_CONSOLE, 115200u);
     shell_init();
 
+    /* Never returns: ST's startup code has nothing to return to. */
     for (;;) {
         uint8_t byte;
 

@@ -59,6 +59,7 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_end = .);
     } > FLASH
 
+    /* Initial values are stored in flash; ST's startup copies them here before main(). */
     _sidata = LOADADDR(.data);
 
     .data :

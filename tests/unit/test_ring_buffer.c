@@ -56,6 +56,7 @@ static void test_push_fails_when_full_without_losing_data(void)
 
 static void test_wraps_past_end_of_storage_and_counter_overflow(void)
 {
+    /* Start near the top of the counter range so the counters and the storage index both wrap. */
     atomic_store(&rb.head, UINT32_MAX - 2u);
     atomic_store(&rb.tail, UINT32_MAX - 2u);
 
