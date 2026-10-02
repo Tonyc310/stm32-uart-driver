@@ -21,6 +21,12 @@ size_t uart_write(uart_id_t id, const uint8_t *data, size_t len)
     return len;
 }
 
+uint32_t uart_rx_dropped(uart_id_t id)
+{
+    (void)id;
+    return 0;
+}
+
 void board_led_set(bool on)
 {
     led_on = on;

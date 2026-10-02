@@ -76,11 +76,20 @@ static void cmd_echo(const char *args)
     print("\r\n");
 }
 
+static void cmd_stats(const char *args)
+{
+    (void)args;
+    print("rx dropped: ");
+    print_u32(uart_rx_dropped(UART_CONSOLE));
+    print("\r\n");
+}
+
 static const command_t commands[] = {
     {"help", "help          list commands", cmd_help},
     {"led", "led on|off    switch the green LED", cmd_led},
     {"uptime", "uptime        milliseconds since reset", cmd_uptime},
     {"echo", "echo <text>   print text back", cmd_echo},
+    {"stats", "stats         received bytes lost to overruns", cmd_stats},
 };
 
 static void cmd_help(const char *args)

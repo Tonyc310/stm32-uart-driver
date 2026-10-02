@@ -9,7 +9,7 @@ Interrupt-driven UART driver for the STM32F407, written bare-metal against CMSIS
 - Interrupt-driven RX and TX on USART2 through lock-free ring buffers; the main loop never blocks on the UART
 - No dynamic allocation; every buffer is statically sized
 - RX overruns are counted, never silently dropped
-- Command shell: `help`, `led on|off`, `uptime`, `echo <text>`
+- Command shell: `help`, `led on|off`, `uptime`, `echo <text>`, `stats`
 
 ## Example session
 
@@ -20,11 +20,14 @@ help          list commands
 led on|off    switch the green LED
 uptime        milliseconds since reset
 echo <text>   print text back
+stats         received bytes lost to overruns
 > led on
 > uptime
-3503 ms
+3609 ms
 > echo hello from the STM32
 hello from the STM32
+> stats
+rx dropped: 0
 > blink
 unknown command: blink (try help)
 ```
