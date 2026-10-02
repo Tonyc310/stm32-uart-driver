@@ -1,5 +1,4 @@
-#include "cobs.h"
-#include "crc16.h"
+#include "telemetry.h"
 #include "unity.h"
 
 void setUp(void)
@@ -10,37 +9,33 @@ void tearDown(void)
 {
 }
 
-static void expect_cobs(const uint8_t *data, size_t len, const uint8_t *expected,
-                        size_t expected_len)
+static void expect_frame(const uint8_t *expected, size_t expected_len, const uint8_t *frame,
+                         size_t len)
 {
-    uint8_t out[16];
-
-    TEST_ASSERT_EQUAL(expected_len, cobs_encode(data, len, out));
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, out, expected_len);
+    TEST_ASSERT_EQUAL(expected_len, len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, frame, len);
 }
 
-static void test_crc_matches_standard_check_value(void)
+/* Whole frames cover the CRC, COBS (both packets contain zero bytes), and each message's layout. */
+static void test_frames_match_reference_bytes(void)
 {
-    const uint8_t check[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    /* Generated with the Python `cobs` and `crcmod` packages, independent of this code. */
+    const uint8_t status[] = {0x04, 0x01, 0xE8, 0x03, 0x01, 0x04, 0x01, 0x6C, 0xF9, 0x00};
+    const uint8_t console_stats[] = {0x03, 0x02, 0x0D, 0x01, 0x01, 0x02, 0x64, 0x01, 0x01,
+                                     0x01, 0x01, 0x01, 0x01, 0x03, 0x16, 0x35, 0x00};
+    const uart_stats_t stats = {.rx_bytes = 13, .tx_bytes = 100, .rx_dropped = 0};
+    uint8_t frame[TELEMETRY_MAX_FRAME];
+    size_t len;
 
-    TEST_ASSERT_EQUAL_HEX16(0x29B1, crc16_ccitt(check, sizeof check));
-}
-
-static void test_cobs_matches_reference_encodings(void)
-{
-    const uint8_t mixed[] = {0x11, 0x22, 0x00, 0x33};
-    const uint8_t mixed_encoded[] = {0x03, 0x11, 0x22, 0x02, 0x33};
-    const uint8_t zeros[] = {0x00, 0x00};
-    const uint8_t zeros_encoded[] = {0x01, 0x01, 0x01};
-
-    expect_cobs(mixed, sizeof mixed, mixed_encoded, sizeof mixed_encoded);
-    expect_cobs(zeros, sizeof zeros, zeros_encoded, sizeof zeros_encoded);
+    len = telemetry_pack_status(1000, true, frame);
+    expect_frame(status, sizeof status, frame, len);
+    len = telemetry_pack_console_stats(&stats, frame);
+    expect_frame(console_stats, sizeof console_stats, frame, len);
 }
 
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_crc_matches_standard_check_value);
-    RUN_TEST(test_cobs_matches_reference_encodings);
+    RUN_TEST(test_frames_match_reference_bytes);
     return UNITY_END();
 }
