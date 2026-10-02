@@ -53,3 +53,14 @@ target_link_options(stm32-uart-driver PRIVATE
     -T${LINKER_SCRIPT}
     -Wl,-Map=$<TARGET_FILE_DIR:stm32-uart-driver>/stm32-uart-driver.map
     -Wl,--print-memory-usage)
+
+find_program(RENODE_TEST renode-test)
+if(RENODE_TEST)
+    enable_testing()
+    set(RENODE_RESULTS_DIR ${CMAKE_BINARY_DIR}/renode)
+    file(MAKE_DIRECTORY ${RENODE_RESULTS_DIR})
+    # renode-test always writes its results to the working directory, so keep them in the build tree.
+    add_test(NAME renode_uart_shell
+        COMMAND ${RENODE_TEST} ${CMAKE_SOURCE_DIR}/tests/sim/uart_shell.robot
+        WORKING_DIRECTORY ${RENODE_RESULTS_DIR})
+endif()

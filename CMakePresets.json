@@ -40,6 +40,17 @@
       "output": {
         "outputOnFailure": true
       }
+    },
+    {
+      "name": "sim-tests",
+      "displayName": "Firmware tests in Renode",
+      "configurePreset": "firmware",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
     }
   ],
   "workflowPresets": [
@@ -56,6 +67,14 @@
         { "type": "configure", "name": "host-tests" },
         { "type": "build", "name": "host-tests" },
         { "type": "test", "name": "host-tests" }
+      ]
+    },
+    {
+      "name": "sim-tests",
+      "steps": [
+        { "type": "configure", "name": "firmware" },
+        { "type": "build", "name": "firmware" },
+        { "type": "test", "name": "sim-tests" }
       ]
     }
   ]
