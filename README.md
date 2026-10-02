@@ -9,6 +9,24 @@ Interrupt-driven UART driver for the STM32F407, written bare-metal against CMSIS
 - RX overruns are counted, never silently dropped
 - Command shell: `help`, `led on|off`, `uptime`, `echo <text>`
 
+## Example session
+
+```
+stm32-uart-driver, type help
+> help
+help          list commands
+led on|off    switch the green LED
+uptime        milliseconds since reset
+echo <text>   print text back
+> led on
+> uptime
+3503 ms
+> echo hello from the STM32
+hello from the STM32
+> blink
+unknown command: blink (try help)
+```
+
 ## Requirements
 
 - `arm-none-eabi-gcc`, CMake 3.25+, Ninja
