@@ -1,11 +1,28 @@
 cmake_minimum_required(VERSION 3.25)
-project(stm32_uart_driver LANGUAGES C ASM)
+project(stm32_uart_driver LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 include(FetchContent)
+
+add_library(project_warnings INTERFACE)
+target_compile_options(project_warnings INTERFACE -Wall -Wextra -Werror)
+
+# Hardware-independent code: linked into the firmware and unit-tested on the host.
+add_library(portable STATIC src/ring_buffer.c)
+target_include_directories(portable PUBLIC src)
+target_link_libraries(portable PRIVATE project_warnings)
+
+if(NOT CMAKE_CROSSCOMPILING)
+    enable_testing()
+    add_subdirectory(tests/unit)
+    return()
+endif()
+
+enable_language(ASM)
+
 FetchContent_Declare(cmsis_core
     GIT_REPOSITORY https://github.com/ARM-software/CMSIS_6.git
     GIT_TAG        v6.3.0
@@ -31,8 +48,7 @@ add_executable(stm32-uart-driver src/main.c)
 set_target_properties(stm32-uart-driver PROPERTIES
     SUFFIX .elf
     LINK_DEPENDS ${LINKER_SCRIPT})
-target_compile_options(stm32-uart-driver PRIVATE -Wall -Wextra -Werror)
-target_link_libraries(stm32-uart-driver PRIVATE cmsis_device)
+target_link_libraries(stm32-uart-driver PRIVATE cmsis_device portable project_warnings)
 target_link_options(stm32-uart-driver PRIVATE
     -T${LINKER_SCRIPT}
     -Wl,-Map=$<TARGET_FILE_DIR:stm32-uart-driver>/stm32-uart-driver.map
