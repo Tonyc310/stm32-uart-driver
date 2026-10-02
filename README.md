@@ -1,5 +1,7 @@
 # stm32-uart-driver
 
+[![CI](https://github.com/Tonyc310/stm32-uart-driver/actions/workflows/ci.yml/badge.svg)](https://github.com/Tonyc310/stm32-uart-driver/actions/workflows/ci.yml)
+
 Interrupt-driven UART driver for the STM32F407, written bare-metal against CMSIS registers, with a small command shell to exercise it. It is unit-tested on the host and tested end to end in the Renode simulator, so CI runs the real firmware without hardware.
 
 ## Features
@@ -30,7 +32,7 @@ unknown command: blink (try help)
 ## Requirements
 
 - `arm-none-eabi-gcc`, CMake 3.25+, Ninja
-- [Renode](https://renode.io) for the simulation tests
+- [Renode](https://renode.io) 1.17 for the simulation tests, with `renode-test` on `PATH` and its Python dependencies installed (`pip install -r <renode>/tests/requirements.txt`)
 - Optional hardware: STM32F4 Discovery with a 3.3 V USB-serial adapter on PA2 (TX) and PA3 (RX), 115200 8N1
 
 ## Build
@@ -42,13 +44,13 @@ cmake --workflow --preset firmware
 ## Test
 
 ```bash
-cmake --workflow --preset host-tests       # unit tests on the host
-renode-test tests/sim/uart_shell.robot     # firmware in Renode
+cmake --workflow --preset host-tests    # unit tests on the host
+cmake --workflow --preset sim-tests     # firmware tests in Renode
 ```
 
 ## Run
 
-In the simulator, with the board's UART opened in a terminal window:
+In the simulator, after building. The script opens the board's UART in a terminal window; type `start` in the Renode monitor to boot:
 
 ```bash
 renode tests/sim/stm32f4.resc
@@ -69,6 +71,7 @@ platform/     linker script
 cmake/        arm-none-eabi toolchain file
 tests/unit/   Unity tests run on the host
 tests/sim/    Renode platform script and Robot Framework tests
+.github/      CI: format check, host tests, firmware build, Renode tests
 ```
 
 ## License
