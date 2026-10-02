@@ -11,7 +11,7 @@ add_library(project_warnings INTERFACE)
 target_compile_options(project_warnings INTERFACE -Wall -Wextra -Werror)
 
 # Hardware-independent code: linked into the firmware and unit-tested on the host.
-add_library(portable STATIC src/ring_buffer.c)
+add_library(portable STATIC src/ring_buffer.c src/shell.c)
 target_include_directories(portable PUBLIC src)
 target_link_libraries(portable PRIVATE project_warnings)
 
