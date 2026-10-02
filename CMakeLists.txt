@@ -44,7 +44,7 @@ target_compile_definitions(cmsis_device PUBLIC STM32F407xx)
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/platform/stm32f407vg.ld)
 
-add_executable(stm32-uart-driver src/main.c)
+add_executable(stm32-uart-driver src/main.c src/board.c src/uart.c)
 set_target_properties(stm32-uart-driver PROPERTIES
     SUFFIX .elf
     LINK_DEPENDS ${LINKER_SCRIPT})
