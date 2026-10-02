@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/** Enables peripheral clocks, routes the console UART to PA2/PA3, and starts the 1 ms tick. */
+/** Enables clocks, routes the console UART to PA2/PA3 and telemetry to PD8/PD9, starts the tick. */
 void board_init(void);
 
 /** Switches the green LED (PD12). */

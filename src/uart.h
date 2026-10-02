@@ -5,7 +5,8 @@
 #include <stdint.h>
 
 typedef enum {
-    UART_CONSOLE, /* USART2 */
+    UART_CONSOLE,   /* USART2 */
+    UART_TELEMETRY, /* USART3 */
     UART_COUNT,
 } uart_id_t;
 

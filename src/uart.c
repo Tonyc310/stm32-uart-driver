@@ -27,6 +27,7 @@ typedef struct {
 /* To add a port: an entry here, its IRQ handler below, and its clocks and pins in board.c. */
 static uart_t ports[UART_COUNT] = {
     [UART_CONSOLE] = {.regs = USART2, .irq = USART2_IRQn},
+    [UART_TELEMETRY] = {.regs = USART3, .irq = USART3_IRQn},
 };
 
 static uint32_t apb1_clock_hz(void)
@@ -131,4 +132,9 @@ static void handle_irq(uart_t *port)
 void USART2_IRQHandler(void)
 {
     handle_irq(&ports[UART_CONSOLE]);
+}
+
+void USART3_IRQHandler(void)
+{
+    handle_irq(&ports[UART_TELEMETRY]);
 }
