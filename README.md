@@ -10,7 +10,7 @@ Interrupt-driven UART driver for the STM32F407, written bare-metal against CMSIS
 - No dynamic allocation; every buffer is statically sized
 - RX overruns are counted, never silently dropped
 - Command shell: `help`, `led on|off`, `uptime`, `echo <text>`, `stats`
-- Binary telemetry on USART3 once a second: COBS-framed, CRC-16-checked packets described in [telemetry.toml](telemetry.toml)
+- Binary telemetry on USART3 once a second: COBS-framed, CRC-16-checked packets described in [telemetry.toml](telemetry.toml), decoded by [serial-decoder](https://github.com/Tonyc310/serial-decoder)
 
 ## Example session
 
