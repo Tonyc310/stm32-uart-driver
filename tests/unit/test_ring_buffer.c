@@ -31,36 +31,24 @@ static void expect_drain(uint32_t count, uint8_t first)
         TEST_ASSERT_EQUAL_UINT8((uint8_t)(first + i), byte);
     }
     TEST_ASSERT_EQUAL_UINT32(0, rb_count(&rb));
+    TEST_ASSERT_FALSE(rb_pop(&rb, &byte));
 }
 
-static void test_init_rejects_sizes_that_are_not_powers_of_two(void)
+static void test_init_starts_empty_and_rejects_sizes_that_are_not_powers_of_two(void)
 {
+    expect_drain(0, 0);
     TEST_ASSERT_FALSE(rb_init(&rb, storage, 0));
     TEST_ASSERT_FALSE(rb_init(&rb, storage, 6));
 }
 
-static void test_pop_fails_when_empty(void)
-{
-    uint8_t byte;
-
-    TEST_ASSERT_FALSE(rb_pop(&rb, &byte));
-}
-
-static void test_push_fails_when_full_without_losing_data(void)
-{
-    fill(SIZE, 0);
-    TEST_ASSERT_EQUAL_UINT32(SIZE, rb_count(&rb));
-    TEST_ASSERT_FALSE(rb_push(&rb, 0xFF));
-    expect_drain(SIZE, 0);
-}
-
-static void test_wraps_past_end_of_storage_and_counter_overflow(void)
+static void test_full_and_empty_across_counter_overflow(void)
 {
     /* Start near the top of the counter range so the counters and the storage index both wrap. */
     atomic_store(&rb.head, UINT32_MAX - 2u);
     atomic_store(&rb.tail, UINT32_MAX - 2u);
 
     fill(SIZE, 40);
+    TEST_ASSERT_EQUAL_UINT32(SIZE, rb_count(&rb));
     TEST_ASSERT_FALSE(rb_push(&rb, 0xFF));
     expect_drain(SIZE, 40);
 }
@@ -68,9 +56,7 @@ static void test_wraps_past_end_of_storage_and_counter_overflow(void)
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_init_rejects_sizes_that_are_not_powers_of_two);
-    RUN_TEST(test_pop_fails_when_empty);
-    RUN_TEST(test_push_fails_when_full_without_losing_data);
-    RUN_TEST(test_wraps_past_end_of_storage_and_counter_overflow);
+    RUN_TEST(test_init_starts_empty_and_rejects_sizes_that_are_not_powers_of_two);
+    RUN_TEST(test_full_and_empty_across_counter_overflow);
     return UNITY_END();
 }

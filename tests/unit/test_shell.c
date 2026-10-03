@@ -62,32 +62,11 @@ void tearDown(void)
 {
 }
 
-static void test_runs_command_once_per_line_ending(void)
+static void test_line_editing_handles_backspace_and_crlf(void)
 {
-    type("echo hi\r\n");
-    expect_output("echo hi\r\nhi\r\n> ");
+    type("echoo\b hi\r\n");
+    expect_output("\r\nhi\r\n> ");
     TEST_ASSERT_NULL(strstr(output, "> \r\n> "));
-}
-
-static void test_led_command_switches_board_led(void)
-{
-    type("led on\r");
-    TEST_ASSERT_TRUE(led_on);
-    type("led off\r");
-    TEST_ASSERT_FALSE(led_on);
-}
-
-static void test_uptime_prints_board_milliseconds(void)
-{
-    uptime_ms = 4294967295u;
-    type("uptime\r");
-    expect_output("\r\n4294967295 ms\r\n");
-}
-
-static void test_backspace_erases_last_character(void)
-{
-    type("ledd\b on\r");
-    TEST_ASSERT_TRUE(led_on);
 }
 
 static void test_ignores_input_past_line_limit(void)
@@ -99,13 +78,23 @@ static void test_ignores_input_past_line_limit(void)
     expect_output("unknown command: xxxx");
 }
 
+static void test_led_and_uptime_commands_use_the_board(void)
+{
+    type("led on\r");
+    TEST_ASSERT_TRUE(led_on);
+    type("led off\r");
+    TEST_ASSERT_FALSE(led_on);
+
+    uptime_ms = 4294967295u;
+    type("uptime\r");
+    expect_output("\r\n4294967295 ms\r\n");
+}
+
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_runs_command_once_per_line_ending);
-    RUN_TEST(test_led_command_switches_board_led);
-    RUN_TEST(test_uptime_prints_board_milliseconds);
-    RUN_TEST(test_backspace_erases_last_character);
+    RUN_TEST(test_line_editing_handles_backspace_and_crlf);
     RUN_TEST(test_ignores_input_past_line_limit);
+    RUN_TEST(test_led_and_uptime_commands_use_the_board);
     return UNITY_END();
 }
