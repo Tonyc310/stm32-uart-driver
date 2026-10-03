@@ -22,6 +22,9 @@ void uart_init(uart_id_t id, uint32_t baud);
 /** Queues up to `len` bytes to send and returns how many fit. Never blocks. */
 size_t uart_write(uart_id_t id, const uint8_t *data, size_t len);
 
+/** Free space in the TX buffer. Only grows until the next uart_write(), as the ISR only drains. */
+size_t uart_tx_free(uart_id_t id);
+
 /** Copies up to `len` received bytes into `data` and returns how many. Never blocks. */
 size_t uart_read(uart_id_t id, uint8_t *data, size_t len);
 

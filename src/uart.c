@@ -72,6 +72,11 @@ size_t uart_write(uart_id_t id, const uint8_t *data, size_t len)
     return queued;
 }
 
+size_t uart_tx_free(uart_id_t id)
+{
+    return TX_BUFFER_SIZE - rb_count(&ports[id].tx);
+}
+
 size_t uart_read(uart_id_t id, uint8_t *data, size_t len)
 {
     uart_t *port = &ports[id];

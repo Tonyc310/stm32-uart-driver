@@ -44,6 +44,11 @@ void board_led_set(bool on)
     GPIOD->BSRR = on ? GPIO_BSRR_BS12 : GPIO_BSRR_BR12;
 }
 
+bool board_led_is_on(void)
+{
+    return (GPIOD->ODR & GPIO_ODR_OD12) != 0u;
+}
+
 uint32_t board_uptime_ms(void)
 {
     return atomic_load_explicit(&uptime_ms, memory_order_relaxed);

@@ -20,11 +20,12 @@ Switches The Green LED
     Write Line To Uart        led off
     Assert LED State          false
 
-Reports Uptime From The 1 ms Tick
+Sends Telemetry Every Second
     Start Board
+    ${telemetry}=    Create Terminal Tester    sysbus.usart3    binaryMode=true
 
-    Execute Command           pause
-    Execute Command           emulation RunFor "2"
-    Write Line To Uart        uptime
-    # 2 s plus boot and banner time; a wrong tick rate would be off by seconds.
-    Wait For Line On Uart     ^2[01][0-9]{2} ms    treatAsRegex=true
+    # First status frame: ID 0x01, uptime 1000 ms, LED off, CRC-16; COBS-encoded, 0x00-terminated.
+    Wait For Bytes On Uart    04 01 e8 03 01 01 03 4d e9 00    testerId=${telemetry}    pauseEmulation=true
+    # Sent about 1 s into the run by the 1 ms tick; a wrong tick rate would be far off.
+    ${time}=    Execute Command    machine ElapsedVirtualTime
+    Should Match Regexp       ${time}    Elapsed Virtual Time: 00:00:(00\\.9|01\\.0)
