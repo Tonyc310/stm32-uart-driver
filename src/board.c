@@ -1,6 +1,7 @@
 #include "board.h"
 
 #include "stm32f4xx.h"
+#include "uart_hw.h"
 
 #include <stdatomic.h>
 
@@ -8,6 +9,12 @@
 #define TICK_HZ 1000u
 
 static _Atomic uint32_t uptime_ms; /* written only by SysTick_Handler */
+
+/* To add a port: an id in uart_ports.h, an entry here, its IRQ handler, and its pins below. */
+const uart_hw_t uart_hw[UART_COUNT] = {
+    [UART_CONSOLE] = {.regs = USART2, .irq = USART2_IRQn},
+    [UART_TELEMETRY] = {.regs = USART3, .irq = USART3_IRQn},
+};
 
 void board_init(void)
 {
@@ -57,4 +64,14 @@ uint32_t board_uptime_ms(void)
 void SysTick_Handler(void)
 {
     atomic_fetch_add_explicit(&uptime_ms, 1u, memory_order_relaxed);
+}
+
+void USART2_IRQHandler(void)
+{
+    uart_irq_handler(UART_CONSOLE);
+}
+
+void USART3_IRQHandler(void)
+{
+    uart_irq_handler(UART_TELEMETRY);
 }

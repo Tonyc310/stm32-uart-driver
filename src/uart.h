@@ -1,14 +1,10 @@
 #ifndef UART_H
 #define UART_H
 
+#include "uart_ports.h" /* uart_id_t and UART_COUNT, from the board */
+
 #include <stddef.h>
 #include <stdint.h>
-
-typedef enum {
-    UART_CONSOLE,   /* USART2 */
-    UART_TELEMETRY, /* USART3 */
-    UART_COUNT,
-} uart_id_t;
 
 typedef struct {
     uint32_t rx_bytes;

@@ -23,7 +23,7 @@ jobs:
           pip install clang-format==23.1.2
 
       - name: Check formatting
-        run: clang-format --dry-run --Werror src/*.[ch] tests/unit/*.c
+        run: clang-format --dry-run --Werror src/*.[ch] platform/*.h tests/unit/*.c
 
       - name: Unit tests (host)
         run: cmake --workflow --preset host-tests

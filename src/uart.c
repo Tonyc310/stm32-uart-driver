@@ -1,9 +1,10 @@
 #include "uart.h"
 
 #include "ring_buffer.h"
-#include "stm32f4xx.h"
+#include "uart_hw.h"
 
 #include <stdatomic.h>
+#include <stdbool.h>
 
 #define RX_BUFFER_SIZE 256u
 #define TX_BUFFER_SIZE 256u
@@ -12,8 +13,6 @@ _Static_assert((RX_BUFFER_SIZE & (RX_BUFFER_SIZE - 1u)) == 0u, "RX buffer must b
 _Static_assert((TX_BUFFER_SIZE & (TX_BUFFER_SIZE - 1u)) == 0u, "TX buffer must be a power of two");
 
 typedef struct {
-    USART_TypeDef *regs;
-    IRQn_Type irq;
     ring_buffer_t rx;
     ring_buffer_t tx;
     uint8_t rx_storage[RX_BUFFER_SIZE];
@@ -24,23 +23,22 @@ typedef struct {
     _Atomic uint32_t rx_dropped;
 } uart_t;
 
-/* To add a port: an entry here, its IRQ handler below, and its clocks and pins in board.c. */
-static uart_t ports[UART_COUNT] = {
-    [UART_CONSOLE] = {.regs = USART2, .irq = USART2_IRQn},
-    [UART_TELEMETRY] = {.regs = USART3, .irq = USART3_IRQn},
-};
+static uart_t ports[UART_COUNT];
 
-static uint32_t apb1_clock_hz(void)
+/* USART1 and USART6 sit on APB2, the others on APB1. */
+static uint32_t bus_clock_hz(const USART_TypeDef *regs)
 {
-    uint32_t ppre1 = (RCC->CFGR & RCC_CFGR_PPRE1) >> RCC_CFGR_PPRE1_Pos;
+    const bool apb2 = (regs == USART1) || (regs == USART6);
+    const uint32_t prescaler = apb2 ? (RCC->CFGR & RCC_CFGR_PPRE2) >> RCC_CFGR_PPRE2_Pos
+                                    : (RCC->CFGR & RCC_CFGR_PPRE1) >> RCC_CFGR_PPRE1_Pos;
 
-    return SystemCoreClock >> APBPrescTable[ppre1];
+    return SystemCoreClock >> APBPrescTable[prescaler];
 }
 
 void uart_init(uart_id_t id, uint32_t baud)
 {
     uart_t *port = &ports[id];
-    USART_TypeDef *regs = port->regs;
+    USART_TypeDef *regs = uart_hw[id].regs;
 
     /* Can't fail: the static asserts above guarantee power-of-two sizes. */
     (void)rb_init(&port->rx, port->rx_storage, sizeof port->rx_storage);
@@ -51,10 +49,10 @@ void uart_init(uart_id_t id, uint32_t baud)
 
     regs->CR1 = 0u;
     /* With 16x oversampling, BRR is the bus clock divided by the baud rate, rounded. */
-    regs->BRR = (apb1_clock_hz() + baud / 2u) / baud;
+    regs->BRR = (bus_clock_hz(regs) + baud / 2u) / baud;
     regs->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
 
-    NVIC_EnableIRQ(port->irq);
+    NVIC_EnableIRQ(uart_hw[id].irq);
 }
 
 size_t uart_write(uart_id_t id, const uint8_t *data, size_t len)
@@ -67,7 +65,7 @@ size_t uart_write(uart_id_t id, const uint8_t *data, size_t len)
     }
     if (queued > 0u) {
         /* Racing the ISR here is harmless: at worst one TXE interrupt finds the buffer empty. */
-        port->regs->CR1 |= USART_CR1_TXEIE;
+        uart_hw[id].regs->CR1 |= USART_CR1_TXEIE;
     }
     return queued;
 }
@@ -99,9 +97,10 @@ uart_stats_t uart_stats(uart_id_t id)
     };
 }
 
-static void handle_irq(uart_t *port)
+void uart_irq_handler(uart_id_t id)
 {
-    USART_TypeDef *regs = port->regs;
+    uart_t *port = &ports[id];
+    USART_TypeDef *regs = uart_hw[id].regs;
     uint32_t status = regs->SR;
 
     if (status & (USART_SR_RXNE | USART_SR_ORE)) {
@@ -132,14 +131,4 @@ static void handle_irq(uart_t *port)
             regs->CR1 &= ~USART_CR1_TXEIE;
         }
     }
-}
-
-void USART2_IRQHandler(void)
-{
-    handle_irq(&ports[UART_CONSOLE]);
-}
-
-void USART3_IRQHandler(void)
-{
-    handle_irq(&ports[UART_TELEMETRY]);
 }

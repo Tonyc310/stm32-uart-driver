@@ -69,11 +69,22 @@ openocd -f board/stm32f4discovery.cfg \
   -c "program build/firmware/stm32-uart-driver.elf verify reset exit"
 ```
 
+## Using the driver in another project
+
+`src/uart.c` and `src/ring_buffer.c` don't know which board they run on. A project that reuses them provides:
+
+- `uart_ports.h`, naming its ports in `uart_id_t`, ending with `UART_COUNT`
+- the `uart_hw` table from `src/uart_hw.h`: the USART and interrupt behind each port
+- an IRQ handler for each USART that calls `uart_irq_handler()`
+- the clocks and pins, set up before `uart_init()`
+
+This repo's own versions are `platform/uart_ports.h` and `src/board.c`.
+
 ## Layout
 
 ```
 src/            application, UART driver, ring buffer, shell, telemetry framing
-platform/       linker script
+platform/       linker script and the board's UART port list
 cmake/          arm-none-eabi toolchain file
 tests/unit/     Unity tests run on the host
 tests/sim/      Renode platform script and Robot Framework tests

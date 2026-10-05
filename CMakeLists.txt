@@ -12,7 +12,7 @@ target_compile_options(project_warnings INTERFACE -Wall -Wextra -Werror)
 
 # Hardware-independent code: linked into the firmware and unit-tested on the host.
 add_library(portable STATIC src/ring_buffer.c src/shell.c src/crc16.c src/cobs.c src/telemetry.c)
-target_include_directories(portable PUBLIC src)
+target_include_directories(portable PUBLIC src platform)
 target_link_libraries(portable PRIVATE project_warnings)
 
 if(NOT CMAKE_CROSSCOMPILING)
